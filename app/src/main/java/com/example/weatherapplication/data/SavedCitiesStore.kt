@@ -56,12 +56,13 @@ class SavedCitiesStore(context: Context) {
             o.put("lon", c.longitude)
             arr.put(o)
         }
-        prefs.edit { putString(key, arr.toString()) }
+        // commit = true чтобы сразу читать обновлённое значение (исправляет задержку при добавлении 3+ городов)
+        prefs.edit(commit = true) { putString(key, arr.toString()) }
     }
 
     // Last selected city
     fun setLast(city: City) {
-        prefs.edit {
+        prefs.edit(commit = true) {
             putString(lastNameKey, city.name)
                 .putString(lastCountryKey, city.country ?: "")
                 .putFloat(lastLatKey, city.latitude.toFloat())

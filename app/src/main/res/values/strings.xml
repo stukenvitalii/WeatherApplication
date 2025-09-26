@@ -1,3 +1,35 @@
 <resources>
     <string name="app_name">WeatherApplication</string>
+    <string name="my_cities">Мои города</string>
+    <string name="empty_list">Пока пусто</string>
+    <string name="choose_city">Выберите город</string>
+    <string name="search_placeholder">Введите город (например, Москва)</string>
+    <string name="cancel">Отмена</string>
+    <string name="find">Найти</string>
+    <string name="my_location">Моё местоположение</string>
+    <string name="loading_weather">Загружаем погоду...</string>
+    <string name="error_generic">Ошибка</string>
+    <string name="enter_city_or_use_location">Введите город или используйте местоположение</string>
+    <string name="wind_format">Ветер: %1$.1f м/с</string>
+    <string name="current_location">Текущее местоположение</string>
+    <string name="drawer_language">Язык</string>
+    <string name="language_russian">Русский</string>
+    <string name="language_english">English</string>
+    <string name="close">Закрыть</string>
+
+    <!-- Weather code descriptions -->
+    <string name="w_clear">Ясно</string>
+    <string name="w_partly_cloudy">Малооблачно</string>
+    <string name="w_overcast">Пасмурно</string>
+    <string name="w_fog">Туман</string>
+    <string name="w_drizzle">Моросящий дождь</string>
+    <string name="w_rain">Дождь</string>
+    <string name="w_freezing_rain">Ледяной дождь</string>
+    <string name="w_snow">Снег</string>
+    <string name="w_snowfall">Снегопад</string>
+    <string name="w_showers">Ливни</string>
+    <string name="w_snow_showers">Снеговые ливни</string>
+    <string name="w_thunderstorm">Гроза</string>
+    <string name="w_thunderstorm_hail">Гроза с градом</string>
+    <string name="w_unknown">Неизвестно</string>
 </resources>

@@ -17,12 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.weatherapplication.R
 import com.example.weatherapplication.data.model.City
 import com.example.weatherapplication.data.model.DailyForecast
 import java.time.LocalDate
@@ -34,6 +36,7 @@ import java.util.Locale
 fun WeatherScreen(
     state: WeatherUiState,
     saved: Boolean,
+    language: String,
     onQueryChange: (String) -> Unit,
     onSearch: (String) -> Unit,
     onUseLocation: () -> Unit,
@@ -42,7 +45,7 @@ fun WeatherScreen(
     onSelectSuggestion: (City) -> Unit,
     onStartSearch: () -> Unit,
     onStopSearch: () -> Unit,
-    onRefresh: () -> Unit, // сигнатуру пока оставляю, чтобы не менять вызовы
+    onRefresh: () -> Unit,
 ) {
     val isNight = state.weather?.isNight == true
     val gradient = if (isNight) {
@@ -51,62 +54,68 @@ fun WeatherScreen(
         Brush.verticalGradient(listOf(Color(0xFF4FACFE), Color(0xFF00F2FE)))
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Surface(
-                        shape = RoundedCornerShape(24.dp),
-                        color = Color(0x33FFFFFF)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .heightIn(min = 36.dp)
-                                .clickable { onStartSearch() }
-                                .padding(horizontal = 12.dp, vertical = 4.dp)
+    // Градиент теперь оборачивает Scaffold, чтобы фон был и за TopAppBar
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(gradient)
+    ) {
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = Color.White,
+                        navigationIconContentColor = Color.White,
+                        actionIconContentColor = Color.White
+                    ),
+                    title = {
+                        Surface(
+                            shape = RoundedCornerShape(24.dp),
+                            color = Color(0x33FFFFFF)
                         ) {
-                            val explicitTitle = state.topTitle?.takeIf { it.isNotBlank() }
-                            val cityRaw = state.weather?.city?.name.orEmpty()
-                            val cityTitle = when {
-                                explicitTitle != null -> explicitTitle
-                                cityRaw.isNotBlank() && cityRaw != "Текущее местоположение" -> cityRaw
-                                state.query.isNotBlank() -> state.query
-                                else -> "Выберите город"
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .heightIn(min = 36.dp)
+                                    .clickable { onStartSearch() }
+                                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                            ) {
+                                val explicitTitle = state.topTitle?.takeIf { it.isNotBlank() }
+                                val cityRaw = state.weather?.city?.name.orEmpty()
+                                val currentLocationLabel = stringResource(R.string.current_location)
+                                val cityTitle = when {
+                                    explicitTitle != null -> explicitTitle
+                                    cityRaw.isNotBlank() && cityRaw != currentLocationLabel -> cityRaw
+                                    state.query.isNotBlank() -> state.query
+                                    else -> stringResource(R.string.choose_city)
+                                }
+                                Text(
+                                    cityTitle,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Text("🔍", fontSize = 16.sp)
                             }
-                            Text(
-                                cityTitle,
-                                color = Color.White,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            Text("🔍", fontSize = 16.sp)
+                        }
+                    },
+                    navigationIcon = {
+                        TextButton(onClick = onOpenDrawer) { Text("≡", color = Color.White, fontSize = 20.sp) }
+                    },
+                    actions = {
+                        if (state.weather != null) {
+                            TextButton(onClick = onToggleFavorite) {
+                                Text(if (saved) "★" else "☆", color = Color.Yellow, fontSize = 20.sp)
+                            }
                         }
                     }
-                },
-                navigationIcon = {
-                    TextButton(onClick = onOpenDrawer) {
-                        Text("≡", color = Color.White, fontSize = 20.sp)
-                    }
-                },
-                actions = {
-                    if (state.weather != null) {
-                        TextButton(onClick = onToggleFavorite) {
-                            Text(if (saved) "★" else "☆", color = Color.Yellow, fontSize = 20.sp)
-                        }
-                    }
-                }
-            )
-        },
-        containerColor = Color.Transparent
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(gradient)
-        ) {
+                )
+            },
+            containerColor = Color.Transparent
+        ) { padding ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -121,7 +130,7 @@ fun WeatherScreen(
                         onValueChange = onQueryChange,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        placeholder = { Text("Введите город (например, Москва)") },
+                        placeholder = { Text(stringResource(R.string.search_placeholder)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                         keyboardActions = KeyboardActions(onSearch = { onSearch(state.query) })
@@ -142,16 +151,16 @@ fun WeatherScreen(
                     }
 
                     Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = onStopSearch) { Text("Отмена") }
+                    TextButton(onClick = onStopSearch) { Text(stringResource(R.string.cancel)) }
 
                     Spacer(Modifier.height(12.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Button(onClick = { onSearch(state.query) }, shape = RoundedCornerShape(12.dp)) {
-                            Text("Найти")
+                            Text(stringResource(R.string.find))
                         }
                         OutlinedButton(onClick = onUseLocation, shape = RoundedCornerShape(12.dp)) {
-                            Text("Моё местоположение")
+                            Text(stringResource(R.string.my_location))
                         }
                     }
 
@@ -174,60 +183,62 @@ fun WeatherScreen(
                             ) {
                                 CircularProgressIndicator(color = Color.White)
                                 Spacer(Modifier.height(8.dp))
-                                Text("Загружаем погоду...", color = Color.White)
+                                Text(stringResource(R.string.loading_weather), color = Color.White)
                             }
                         }
-
                         "error" -> {
                             Text(
-                                text = state.error ?: "Ошибка",
+                                text = state.error ?: stringResource(R.string.error_generic),
                                 color = Color.White,
                                 fontSize = 16.sp,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
-
                         "data" -> {
-                            val weather = state.weather!!
-                            val animTemp = animateFloatAsState(
-                                targetValue = weather.temperatureC.toFloat(),
-                                label = "tempAnim"
-                            )
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .animateContentSize()
-                            ) {
-                                WeatherArt(
-                                    code = weather.code,
-                                    isNight = weather.isNight,
-                                    modifier = Modifier.size(180.dp)
+                            val weather = state.weather
+                            if (weather == null) {
+                                // защита от гонки состояния
+                                Text(stringResource(R.string.loading_weather), color = Color.White)
+                            } else {
+                                val animTemp = animateFloatAsState(
+                                    targetValue = weather.temperatureC.toFloat(),
+                                    label = "tempAnim"
                                 )
-                                Spacer(Modifier.height(16.dp))
-                                Text(
-                                    "${"%.1f".format(animTemp.value)}°C",
-                                    color = Color.White,
-                                    fontSize = 56.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(weather.description, color = Color.White, fontSize = 18.sp)
-                                weather.windSpeed?.let {
-                                    Spacer(Modifier.height(8.dp))
-                                    Text("Ветер: ${"%.1f".format(it)} м/с", color = Color.White)
-                                }
-                                if (weather.daily.isNotEmpty()) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .animateContentSize()
+                                ) {
+                                    WeatherArt(
+                                        code = weather.code,
+                                        isNight = weather.isNight,
+                                        modifier = Modifier.size(180.dp)
+                                    )
                                     Spacer(Modifier.height(16.dp))
-                                    DailyForecastRow(items = weather.daily)
+                                    Text(
+                                        "${"%.1f".format(animTemp.value)}°C",
+                                        color = Color.White,
+                                        fontSize = 56.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(weather.description, color = Color.White, fontSize = 18.sp)
+                                    weather.windSpeed?.let {
+                                        Spacer(Modifier.height(8.dp))
+                                        Text(stringResource(R.string.wind_format, it), color = Color.White)
+                                    }
+                                    if (weather.daily.isNotEmpty()) {
+                                        Spacer(Modifier.height(16.dp))
+                                        DailyForecastRow(items = weather.daily, language = language)
+                                    }
                                 }
                             }
                         }
-
                         else -> {
                             Text(
-                                text = "Введите город или используйте местоположение",
+                                text = stringResource(R.string.enter_city_or_use_location),
                                 color = Color.White,
                                 fontSize = 16.sp,
                                 textAlign = TextAlign.Center,
@@ -251,22 +262,19 @@ private fun SuggestionRow(city: City, onClick: () -> Unit) {
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(city.name)
-    }
+    ) { Text(city.name) }
 }
 
 @Composable
-private fun DailyForecastRow(items: List<DailyForecast>) {
-    val locale = Locale("ru")
+private fun DailyForecastRow(items: List<DailyForecast>, language: String) {
+    val locale = if (language == "ru") Locale("ru") else Locale.ENGLISH
     val dayFmt = DateTimeFormatter.ofPattern("E", locale)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         items.take(5).forEach { d ->
-            val day =
-                runCatching { LocalDate.parse(d.dateIso).format(dayFmt) }.getOrElse { d.dateIso }
+            val day = runCatching { LocalDate.parse(d.dateIso).format(dayFmt) }.getOrElse { d.dateIso }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(day, color = Color.White)
                 WeatherArt(code = d.code, modifier = Modifier.size(48.dp))

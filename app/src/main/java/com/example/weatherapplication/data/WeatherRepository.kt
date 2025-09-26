@@ -12,12 +12,19 @@ import java.net.URL
 import java.net.URLEncoder
 import kotlin.math.roundToInt
 
-class WeatherRepository {
+class WeatherRepository(private val language: String = "ru") {
+
+    private fun langOrDefault(): String = when (language.lowercase()) {
+        "ru" -> "ru"
+        "en" -> "en"
+        else -> "en"
+    }
 
     fun searchCities(query: String, limit: Int = 5): List<City> {
         if (query.length < 2) return emptyList()
         val encoded = URLEncoder.encode(query, "UTF-8")
-        val url = "https://geocoding-api.open-meteo.com/v1/search?name=$encoded&count=$limit&language=ru&format=json"
+        val lang = langOrDefault()
+        val url = "https://geocoding-api.open-meteo.com/v1/search?name=$encoded&count=$limit&language=$lang&format=json"
         val resp = httpGet(url) ?: return emptyList()
         val json = JSONObject(resp)
         val results = json.optJSONArray("results") ?: return emptyList()
@@ -37,7 +44,8 @@ class WeatherRepository {
 
     fun getWeatherByCity(name: String): WeatherInfo? {
         val encoded = URLEncoder.encode(name, "UTF-8")
-        val url = "https://geocoding-api.open-meteo.com/v1/search?name=$encoded&count=1&language=ru&format=json"
+        val lang = langOrDefault()
+        val url = "https://geocoding-api.open-meteo.com/v1/search?name=$encoded&count=1&language=$lang&format=json"
         val resp = httpGet(url) ?: return null
         val json = JSONObject(resp)
         val results = json.optJSONArray("results") ?: return null
@@ -58,7 +66,8 @@ class WeatherRepository {
     }
 
     fun getWeatherByCoordinates(lat: Double, lon: Double): WeatherInfo? {
-        val reverseUrl = "https://geocoding-api.open-meteo.com/v1/reverse?latitude=$lat&longitude=$lon&count=1&language=ru"
+        val lang = langOrDefault()
+        val reverseUrl = "https://geocoding-api.open-meteo.com/v1/reverse?latitude=$lat&longitude=$lon&count=1&language=$lang"
         val city: City = runCatching {
             val resp = httpGet(reverseUrl)
             if (resp != null) {
@@ -74,10 +83,15 @@ class WeatherRepository {
                         latitude = lat,
                         longitude = lon
                     )
-                } else City("Текущее местоположение", null, lat, lon)
-            } else City("Текущее местоположение", null, lat, lon)
-        }.getOrElse { City("Текущее местоположение", null, lat, lon) }
+                } else City(defaultCurrentLocationLabel(), null, lat, lon)
+            } else City(defaultCurrentLocationLabel(), null, lat, lon)
+        }.getOrElse { City(defaultCurrentLocationLabel(), null, lat, lon) }
         return getWeatherInternal(city)
+    }
+
+    private fun defaultCurrentLocationLabel(): String = when (langOrDefault()) {
+        "ru" -> "Текущее местоположение"
+        else -> "Current location"
     }
 
     private fun getWeatherInternal(city: City): WeatherInfo? {
@@ -139,6 +153,44 @@ class WeatherRepository {
         )
     }
 
+    private fun mapWeatherCode(code: Int): String {
+        val lang = langOrDefault()
+        return when (lang) {
+            "ru" -> when (code) {
+                0 -> "Ясно"
+                1, 2 -> "Малооблачно"
+                3 -> "Пасмурно"
+                45, 48 -> "Туман"
+                51, 53, 55 -> "Моросящий дождь"
+                61, 63, 65 -> "Дождь"
+                66, 67 -> "Ледяной дождь"
+                71, 73, 75 -> "Снег"
+                77 -> "Снегопад"
+                80, 81, 82 -> "Ливни"
+                85, 86 -> "Снеговые ливни"
+                95 -> "Гроза"
+                96, 99 -> "Гроза с градом"
+                else -> "Неизвестно"
+            }
+            else -> when (code) {
+                0 -> "Clear"
+                1, 2 -> "Partly cloudy"
+                3 -> "Overcast"
+                45, 48 -> "Fog"
+                51, 53, 55 -> "Drizzle"
+                61, 63, 65 -> "Rain"
+                66, 67 -> "Freezing rain"
+                71, 73, 75 -> "Snow"
+                77 -> "Snowfall"
+                80, 81, 82 -> "Showers"
+                85, 86 -> "Snow showers"
+                95 -> "Thunderstorm"
+                96, 99 -> "Thunderstorm with hail"
+                else -> "Unknown"
+            }
+        }
+    }
+
     private fun httpGet(url: String): String? {
         var conn: HttpURLConnection? = null
         return try {
@@ -156,21 +208,4 @@ class WeatherRepository {
             conn?.disconnect()
         }
     }
-}
-
-fun mapWeatherCode(code: Int): String = when (code) {
-    0 -> "Ясно"
-    1, 2 -> "Малооблачно"
-    3 -> "Пасмурно"
-    45, 48 -> "Туман"
-    51, 53, 55 -> "Моросящий дождь"
-    61, 63, 65 -> "Дождь"
-    66, 67 -> "Ледяной дождь"
-    71, 73, 75 -> "Снег"
-    77 -> "Снегопад"
-    80, 81, 82 -> "Ливни"
-    85, 86 -> "Снеговые ливни"
-    95 -> "Гроза"
-    96, 99 -> "Гроза с градом"
-    else -> "Неизвестно"
 }

@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">WeatherApplication</string>
+    <string name="my_cities">My cities</string>
+    <string name="empty_list">Empty</string>
+    <string name="choose_city">Choose a city</string>
+    <string name="search_placeholder">Enter city (e.g. London)</string>
+    <string name="cancel">Cancel</string>
+    <string name="find">Find</string>
+    <string name="my_location">My location</string>
+    <string name="loading_weather">Loading weather...</string>
+    <string name="error_generic">Error</string>
+    <string name="enter_city_or_use_location">Enter a city or use location</string>
+    <string name="wind_format">Wind: %1$.1f m/s</string>
+    <string name="current_location">Current location</string>
+    <string name="drawer_language">Language</string>
+    <string name="language_russian">Russian</string>
+    <string name="language_english">English</string>
+    <string name="close">Close</string>
+    <string name="w_clear">Clear</string>
+    <string name="w_partly_cloudy">Partly cloudy</string>
+    <string name="w_overcast">Overcast</string>
+    <string name="w_fog">Fog</string>
+    <string name="w_drizzle">Drizzle</string>
+    <string name="w_rain">Rain</string>
+    <string name="w_freezing_rain">Freezing rain</string>
+    <string name="w_snow">Snow</string>
+    <string name="w_snowfall">Snowfall</string>
+    <string name="w_showers">Showers</string>
+    <string name="w_snow_showers">Snow showers</string>
+    <string name="w_thunderstorm">Thunderstorm</string>
+    <string name="w_thunderstorm_hail">Thunderstorm with hail</string>
+    <string name="w_unknown">Unknown</string>
+</resources>

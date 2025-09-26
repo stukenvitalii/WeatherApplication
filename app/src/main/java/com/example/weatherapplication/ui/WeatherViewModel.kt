@@ -11,9 +11,9 @@ import com.example.weatherapplication.data.model.City
 import com.example.weatherapplication.data.model.WeatherInfo
 import java.util.concurrent.Executors
 
-class WeatherViewModel(private val store: SavedCitiesStore? = null) {
+class WeatherViewModel(private val store: SavedCitiesStore? = null, private val language: String = "ru") {
 
-    private val repo = WeatherRepository()
+    private var repo = WeatherRepository(language)
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -26,13 +26,8 @@ class WeatherViewModel(private val store: SavedCitiesStore? = null) {
 
     private fun firstPart(name: String?): String? = name?.substringBefore(',')?.trim()?.takeIf { it.isNotBlank() }
 
-    fun startSearch() {
-        uiState = uiState.copy(isSearching = true)
-    }
-
-    fun stopSearch() {
-        uiState = uiState.copy(isSearching = false, suggestions = emptyList())
-    }
+    fun startSearch() { uiState = uiState.copy(isSearching = true) }
+    fun stopSearch() { uiState = uiState.copy(isSearching = false, suggestions = emptyList()) }
 
     fun refresh() {
         val lat = lastLat
@@ -47,7 +42,6 @@ class WeatherViewModel(private val store: SavedCitiesStore? = null) {
 
     fun setQuery(query: String) {
         uiState = uiState.copy(query = query, isSearching = true)
-        // debounce suggestions
         pendingSearch?.let { mainHandler.removeCallbacks(it) }
         if (query.length < 2) {
             uiState = uiState.copy(suggestions = emptyList())
@@ -88,7 +82,8 @@ class WeatherViewModel(private val store: SavedCitiesStore? = null) {
                     store?.setLast(info.city)
                     uiState = uiState.copy(isLoading = false, weather = info, error = null)
                 } else {
-                    uiState = uiState.copy(isLoading = false, weather = null, error = "Город не найден или ошибка сети")
+                    val err = if (language == "ru") "Город не найден или ошибка сети" else "City not found or network error"
+                    uiState = uiState.copy(isLoading = false, weather = null, error = err)
                 }
             }
         }
@@ -108,7 +103,8 @@ class WeatherViewModel(private val store: SavedCitiesStore? = null) {
             mainHandler.post {
                 if (info != null) {
                     val resolvedName = firstPart(info.city.name)
-                    val safeName = resolvedName?.takeIf { it != "Текущее местоположение" }
+                    val currentLocLabel = if (language == "ru") "Текущее местоположение" else "Current location"
+                    val safeName = resolvedName?.takeIf { it != currentLocLabel }
                     store?.setLast(info.city)
                     uiState = uiState.copy(
                         isLoading = false,
@@ -119,7 +115,8 @@ class WeatherViewModel(private val store: SavedCitiesStore? = null) {
                         topTitle = safeName ?: uiState.topTitle
                     )
                 } else {
-                    uiState = uiState.copy(isLoading = false, weather = null, error = "Не удалось получить погоду")
+                    val err = if (language == "ru") "Не удалось получить погоду" else "Failed to get weather"
+                    uiState = uiState.copy(isLoading = false, weather = null, error = err)
                 }
             }
         }
