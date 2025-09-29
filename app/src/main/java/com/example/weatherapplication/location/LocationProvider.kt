@@ -30,7 +30,7 @@ class LocationProvider(private val context: Context) {
         var best: Location? = null
         for (p in providers) {
             val loc = runCatching { lm.getLastKnownLocation(p) }.getOrNull()
-            if (loc != null && (best == null || loc.time > best!!.time)) {
+            if (loc != null && (best == null || loc.time > best.time)) {
                 best = loc
             }
         }

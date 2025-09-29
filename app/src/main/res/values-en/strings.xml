@@ -16,6 +16,7 @@
     <string name="language_russian">Russian</string>
     <string name="language_english">English</string>
     <string name="close">Close</string>
+
     <string name="w_clear">Clear</string>
     <string name="w_partly_cloudy">Partly cloudy</string>
     <string name="w_overcast">Overcast</string>
@@ -30,4 +31,17 @@
     <string name="w_thunderstorm">Thunderstorm</string>
     <string name="w_thunderstorm_hail">Thunderstorm with hail</string>
     <string name="w_unknown">Unknown</string>
+
+    <!-- Indices -->
+    <string name="feels_like_format">Feels like: %1$.1f°C</string>
+    <string name="uv_index_format">UV index: %1$.1f</string>
+    <string name="cloud_cover_format">Cloud cover: %1$d%%</string>
+    <string name="visibility_format">Visibility: %1$.1f km</string>
+    <string name="pressure_format">Pressure: %1$.0f hPa</string>
+    <string name="dew_point_format">Dew point: %1$.1f°C</string>
+    <string name="last_updated_format">Updated: %1$s</string>
+    <string name="cached_data_notice">Showing cached data</string>
+    <string name="more_details">More details</string>
+    <string name="show_details">Show details</string>
+    <string name="hide_details">Hide details</string>
 </resources>

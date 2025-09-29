@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.weatherapplication.data.LanguagePreferenceStore
 import com.example.weatherapplication.data.SavedCitiesStore
+import com.example.weatherapplication.data.WeatherCacheStore
 import com.example.weatherapplication.data.model.City
 import com.example.weatherapplication.location.LocationProvider
 import com.example.weatherapplication.ui.WeatherScreen
@@ -40,8 +41,9 @@ class MainActivity : ComponentActivity() {
                 val context = LocalContext.current
                 val store = remember { SavedCitiesStore(context) }
                 val langStore = remember { LanguagePreferenceStore(context) }
+                val cacheStore = remember { WeatherCacheStore(context) }
                 var language by remember { mutableStateOf(langStore.getLanguage().let { if (it.startsWith("ru")) "ru" else "en" }) }
-                val vm = remember(language) { WeatherViewModel(store, language) }
+                val vm = remember(language) { WeatherViewModel(store, language, cacheStore) }
                 val locationProvider = remember { LocationProvider(context) }
                 var savedCities by remember { mutableStateOf(store.getAll()) }
 

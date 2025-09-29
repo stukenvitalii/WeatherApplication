@@ -23,7 +23,16 @@ data class WeatherInfo(
     val description: String,
     val code: Int,
     val isNight: Boolean,
-    val daily: List<DailyForecast> = emptyList()
+    val daily: List<DailyForecast> = emptyList(),
+    // --- New indices ---
+    val feelsLikeC: Double? = null,
+    val uvIndex: Double? = null,
+    val cloudCoverPct: Int? = null,
+    val visibilityKm: Double? = null,
+    val pressureHpa: Double? = null,
+    val dewPointC: Double? = null,
+    // Timestamp when fetched (epoch millis)
+    val fetchedAt: Long = System.currentTimeMillis()
 )
 
 fun LocationProvider.Coordinates.toCityNameFallback(): String = "Текущее местоположение"

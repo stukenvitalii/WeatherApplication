@@ -10,8 +10,13 @@ import com.example.weatherapplication.data.WeatherRepository
 import com.example.weatherapplication.data.model.City
 import com.example.weatherapplication.data.model.WeatherInfo
 import java.util.concurrent.Executors
+import com.example.weatherapplication.data.WeatherCacheStore
 
-class WeatherViewModel(private val store: SavedCitiesStore? = null, private val language: String = "ru") {
+class WeatherViewModel(
+    private val store: SavedCitiesStore? = null,
+    private val language: String = "ru",
+    private val cache: WeatherCacheStore? = null,
+) {
 
     private var repo = WeatherRepository(language)
     private val executor = Executors.newSingleThreadExecutor()
@@ -71,7 +76,8 @@ class WeatherViewModel(private val store: SavedCitiesStore? = null, private val 
             error = null,
             suggestions = emptyList(),
             topTitle = title ?: city,
-            isSearching = false
+            isSearching = false,
+            isCached = false
         )
         executor.execute {
             val info = runCatching { repo.getWeatherByCity(city) }.getOrNull()
@@ -80,10 +86,11 @@ class WeatherViewModel(private val store: SavedCitiesStore? = null, private val 
                     lastLat = info.city.latitude
                     lastLon = info.city.longitude
                     store?.setLast(info.city)
-                    uiState = uiState.copy(isLoading = false, weather = info, error = null)
+                    cache?.save(info)
+                    uiState = uiState.copy(isLoading = false, weather = info, error = null, isCached = false)
                 } else {
                     val err = if (language == "ru") "Город не найден или ошибка сети" else "City not found or network error"
-                    uiState = uiState.copy(isLoading = false, weather = null, error = err)
+                    uiState = uiState.copy(isLoading = false, weather = null, error = err, isCached = false)
                 }
             }
         }
@@ -97,6 +104,11 @@ class WeatherViewModel(private val store: SavedCitiesStore? = null, private val 
                 uiState = uiState.copy(topTitle = uiTitle)
             }
         }
+        // Попытка получить кеш сразу
+        val cached = cache?.get(lat, lon)
+        if (cached != null) {
+            uiState = uiState.copy(weather = cached, isCached = true, error = null)
+        }
         uiState = uiState.copy(isLoading = true, error = null, suggestions = emptyList())
         executor.execute {
             val info: WeatherInfo? = runCatching { repo.getWeatherByCoordinates(lat, lon) }.getOrNull()
@@ -106,17 +118,24 @@ class WeatherViewModel(private val store: SavedCitiesStore? = null, private val 
                     val currentLocLabel = if (language == "ru") "Текущее местоположение" else "Current location"
                     val safeName = resolvedName?.takeIf { it != currentLocLabel }
                     store?.setLast(info.city)
+                    cache?.save(info)
                     uiState = uiState.copy(
                         isLoading = false,
                         weather = info,
                         query = "",
                         error = null,
                         isSearching = false,
-                        topTitle = safeName ?: uiState.topTitle
+                        topTitle = safeName ?: uiState.topTitle,
+                        isCached = false
                     )
                 } else {
-                    val err = if (language == "ru") "Не удалось получить погоду" else "Failed to get weather"
-                    uiState = uiState.copy(isLoading = false, weather = null, error = err)
+                    if (cached != null) {
+                        // оставляем кешированные данные
+                        uiState = uiState.copy(isLoading = false, error = null, isCached = true)
+                    } else {
+                        val err = if (language == "ru") "Не удалось получить погоду" else "Failed to get weather"
+                        uiState = uiState.copy(isLoading = false, weather = null, error = err, isCached = false)
+                    }
                 }
             }
         }
@@ -131,4 +150,5 @@ data class WeatherUiState(
     val suggestions: List<City> = emptyList(),
     val isSearching: Boolean = false,
     val topTitle: String? = null,
+    val isCached: Boolean = false,
 )

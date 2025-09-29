@@ -98,7 +98,11 @@ class WeatherRepository(private val language: String = "ru") {
         val uri = "https://api.open-meteo.com/v1/forecast".toUri().buildUpon()
             .appendQueryParameter("latitude", city.latitude.toString())
             .appendQueryParameter("longitude", city.longitude.toString())
-            .appendQueryParameter("current", "temperature_2m,weather_code,wind_speed_10m,is_day")
+            .appendQueryParameter(
+                "current",
+                // добавлены новые текущие параметры
+                "temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day,cloud_cover,visibility,pressure_msl,dew_point_2m,uv_index"
+            )
             .appendQueryParameter("daily", "weather_code,temperature_2m_max,temperature_2m_min")
             .appendQueryParameter("forecast_days", "5")
             .appendQueryParameter("timezone", "auto")
@@ -113,6 +117,15 @@ class WeatherRepository(private val language: String = "ru") {
         val isDayInt = current.optInt("is_day", 1)
         val isNight = isDayInt == 0
         val windVal = if (wind.isNaN()) null else wind
+
+        // дополнительные индексы
+        val feelsLike = current.optDouble("apparent_temperature").takeUnless { it.isNaN() }
+        val uv = current.optDouble("uv_index").takeUnless { it.isNaN() }
+        val cloudCover = current.optDouble("cloud_cover").takeUnless { it.isNaN() }?.roundToInt()
+        val visibilityMeters = current.optDouble("visibility").takeUnless { it.isNaN() }
+        val pressure = current.optDouble("pressure_msl").takeUnless { it.isNaN() }
+        val dewPoint = current.optDouble("dew_point_2m").takeUnless { it.isNaN() }
+        val visibilityKm = visibilityMeters?.div(1000.0)?.let { (it * 10).roundToInt() / 10.0 }
 
         val dailyJson = json.optJSONObject("daily")
         val dailyList = mutableListOf<DailyForecast>()
@@ -149,7 +162,14 @@ class WeatherRepository(private val language: String = "ru") {
             description = mapWeatherCode(code),
             code = code,
             isNight = isNight,
-            daily = dailyList
+            daily = dailyList,
+            feelsLikeC = feelsLike?.let { (it * 10).roundToInt() / 10.0 },
+            uvIndex = uv?.let { (it * 10).roundToInt() / 10.0 },
+            cloudCoverPct = cloudCover,
+            visibilityKm = visibilityKm,
+            pressureHpa = pressure?.let { (it * 10).roundToInt() / 10.0 },
+            dewPointC = dewPoint?.let { (it * 10).roundToInt() / 10.0 },
+            fetchedAt = System.currentTimeMillis()
         )
     }
 

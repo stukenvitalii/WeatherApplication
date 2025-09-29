@@ -32,4 +32,17 @@
     <string name="w_thunderstorm">Гроза</string>
     <string name="w_thunderstorm_hail">Гроза с градом</string>
     <string name="w_unknown">Неизвестно</string>
+
+    <!-- Indices -->
+    <string name="feels_like_format">Ощущается как: %1$.1f°C</string>
+    <string name="uv_index_format">УФ индекс: %1$.1f</string>
+    <string name="cloud_cover_format">Облачность: %1$d%%</string>
+    <string name="visibility_format">Видимость: %1$.1f км</string>
+    <string name="pressure_format">Давление: %1$.0f гПа</string>
+    <string name="dew_point_format">Точка росы: %1$.1f°C</string>
+    <string name="last_updated_format">Обновлено: %1$s</string>
+    <string name="cached_data_notice">Показаны сохранённые данные</string>
+    <string name="more_details">Дополнительные показатели</string>
+    <string name="show_details">Показать детали</string>
+    <string name="hide_details">Скрыть детали</string>
 </resources>

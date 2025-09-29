@@ -6,13 +6,15 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -27,8 +29,10 @@ import androidx.compose.ui.unit.sp
 import com.example.weatherapplication.R
 import com.example.weatherapplication.data.model.City
 import com.example.weatherapplication.data.model.DailyForecast
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,6 +128,30 @@ fun WeatherScreen(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Время последнего обновления (если есть данные) — сразу под AppBar
+                if (!state.isSearching && state.weather != null) {
+                    val dateFmt = SimpleDateFormat("HH:mm", if (language == "ru") Locale("ru") else Locale.ENGLISH)
+                    val timeStr = dateFmt.format(Date(state.weather.fetchedAt))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.last_updated_format, timeStr),
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 12.sp
+                        )
+                        if (state.isCached) {
+                            Text(
+                                text = stringResource(R.string.cached_data_notice),
+                                color = Color.Yellow,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
                 if (state.isSearching) {
                     OutlinedTextField(
                         value = state.query,
@@ -223,15 +251,47 @@ fun WeatherScreen(
                                         fontSize = 56.sp,
                                         fontWeight = FontWeight.Bold
                                     )
+                                    // Feels like сразу под основной температурой
+                                    weather.feelsLikeC?.let {
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(stringResource(R.string.feels_like_format, it), color = Color.White, fontSize = 16.sp)
+                                    }
                                     Spacer(Modifier.height(8.dp))
                                     Text(weather.description, color = Color.White, fontSize = 18.sp)
                                     weather.windSpeed?.let {
                                         Spacer(Modifier.height(8.dp))
                                         Text(stringResource(R.string.wind_format, it), color = Color.White)
                                     }
+                                    // Прогноз на дни в виде карусели
                                     if (weather.daily.isNotEmpty()) {
+                                        Spacer(Modifier.height(20.dp))
+                                        DailyForecastCarousel(items = weather.daily, language = language)
+                                    }
+                                    // Раскрываемые дополнительные показатели (кроме feels like)
+                                    var detailsExpanded by remember { mutableStateOf(false) }
+                                    if (weather.uvIndex != null || weather.cloudCoverPct != null || weather.visibilityKm != null || weather.pressureHpa != null || weather.dewPointC != null) {
                                         Spacer(Modifier.height(16.dp))
-                                        DailyForecastRow(items = weather.daily, language = language)
+                                        TextButton(onClick = { detailsExpanded = !detailsExpanded }) {
+                                            Text(
+                                                text = if (detailsExpanded) stringResource(R.string.hide_details) else stringResource(R.string.show_details),
+                                                color = Color.White
+                                            )
+                                        }
+                                        if (detailsExpanded) {
+                                            ElevatedCard(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                shape = RoundedCornerShape(16.dp),
+                                                colors = CardDefaults.elevatedCardColors(containerColor = Color(0x33111111))
+                                            ) {
+                                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                    weather.uvIndex?.let { Text(stringResource(R.string.uv_index_format, it), color = Color.White, fontSize = 14.sp) }
+                                                    weather.cloudCoverPct?.let { Text(stringResource(R.string.cloud_cover_format, it), color = Color.White, fontSize = 14.sp) }
+                                                    weather.visibilityKm?.let { Text(stringResource(R.string.visibility_format, it), color = Color.White, fontSize = 14.sp) }
+                                                    weather.pressureHpa?.let { Text(stringResource(R.string.pressure_format, it), color = Color.White, fontSize = 14.sp) }
+                                                    weather.dewPointC?.let { Text(stringResource(R.string.dew_point_format, it), color = Color.White, fontSize = 14.sp) }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -266,19 +326,31 @@ private fun SuggestionRow(city: City, onClick: () -> Unit) {
 }
 
 @Composable
-private fun DailyForecastRow(items: List<DailyForecast>, language: String) {
+private fun DailyForecastCarousel(items: List<DailyForecast>, language: String) {
     val locale = if (language == "ru") Locale("ru") else Locale.ENGLISH
-    val dayFmt = DateTimeFormatter.ofPattern("E", locale)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        items.take(5).forEach { d ->
+    val dayFmt = DateTimeFormatter.ofPattern("EEE", locale)
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        items(items.take(7)) { d ->
             val day = runCatching { LocalDate.parse(d.dateIso).format(dayFmt) }.getOrElse { d.dateIso }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(day, color = Color.White)
-                WeatherArt(code = d.code, modifier = Modifier.size(48.dp))
-                Text("${d.tempMinC.toInt()}° / ${d.tempMaxC.toInt()}°", color = Color.White)
+            ElevatedCard(shape = RoundedCornerShape(16.dp), colors = CardDefaults.elevatedCardColors(containerColor = Color(0x33FFFFFF))) {
+                Column(
+                    modifier = Modifier
+                        .width(100.dp)
+                        .padding(vertical = 12.dp, horizontal = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(day.uppercase(locale), color = Color.White, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(6.dp))
+                    WeatherArt(code = d.code, modifier = Modifier.size(42.dp))
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "${d.tempMinC.toInt()}° / ${d.tempMaxC.toInt()}°",
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        lineHeight = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }
