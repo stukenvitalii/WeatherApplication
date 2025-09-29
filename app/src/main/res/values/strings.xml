@@ -41,8 +41,19 @@
     <string name="pressure_format">Давление: %1$.0f гПа</string>
     <string name="dew_point_format">Точка росы: %1$.1f°C</string>
     <string name="last_updated_format">Обновлено: %1$s</string>
+    <string name="last_updated_prefix">Обновлено:</string>
+    <string name="just_now">только что</string>
+    <string name="minutes_ago_format">%1$d мин назад</string>
     <string name="cached_data_notice">Показаны сохранённые данные</string>
     <string name="more_details">Дополнительные показатели</string>
     <string name="show_details">Показать детали</string>
     <string name="hide_details">Скрыть детали</string>
+
+    <!-- Short labels for indices (RU) -->
+    <string name="metric_uv">УФ</string>
+    <string name="metric_cloud">Обл</string>
+    <string name="metric_visibility">Видим.</string>
+    <string name="metric_pressure">Давл.</string>
+    <string name="metric_dew">Роса</string>
+    <string name="metric_no_data">Нет данных</string>
 </resources>

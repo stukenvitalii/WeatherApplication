@@ -1,15 +1,7 @@
 package com.example.weatherapplication.ui
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.ui.Modifier
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.rotate
+import android.graphics.drawable.Drawable
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -17,11 +9,82 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.platform.LocalContext
+import com.google.accompanist.drawablepainter.rememberDrawablePainter
+import com.example.weatherapplication.R
 import kotlin.math.PI
 import kotlin.math.sin
 
+// Публичный API: теперь сначала пробуем статическую иконку, затем fallback на анимацию.
 @Composable
 fun WeatherArt(code: Int, isNight: Boolean = false, modifier: Modifier = Modifier) {
+    val staticRes = iconResFor(code, isNight)
+    if (staticRes != null) {
+        val desc = weatherCodeDescriptionForA11y(code)
+        val context = LocalContext.current
+        val drawable = AppCompatResources.getDrawable(context, staticRes)
+        if (drawable != null) {
+            val painter = rememberDrawablePainter(drawable = drawable as Drawable?)
+            Image(
+                painter = painter,
+                contentDescription = desc,
+                modifier = modifier
+            )
+            return
+        }
+    }
+    // если не удалось загрузить drawable – анимированный fallback
+    WeatherArtAnimated(code = code, isNight = isNight, modifier = modifier)
+}
+
+// Маппинг к ресурсам (ночные версии пока игнорируем, можно добавить позже)
+private fun iconResFor(code: Int, isNight: Boolean): Int? = when (code) {
+    0 -> R.drawable.sun
+    1, 2 -> R.drawable.cloudy
+    3 -> R.drawable.clouds
+    45, 48 -> R.drawable.foggy
+    51, 53, 55 -> R.drawable.rain
+    61, 63, 65 -> R.drawable.rain
+    66, 67 -> R.drawable.rain
+    71, 73, 75, 77 -> R.drawable.snow
+    80, 81, 82 -> R.drawable.rain
+    85, 86 -> R.drawable.snow
+    95 -> R.drawable.storm
+    96, 99 -> R.drawable.storm
+    else -> R.drawable.weather_unknown
+}
+
+private fun weatherCodeDescriptionForA11y(code: Int): String = when (code) {
+    0 -> "Clear"
+    1,2 -> "Partly cloudy"
+    3 -> "Overcast"
+    45,48 -> "Fog"
+    51,53,55 -> "Drizzle"
+    61,63,65 -> "Rain"
+    66,67 -> "Freezing rain"
+    71,73,75,77 -> "Snow"
+    80,81,82 -> "Showers"
+    85,86 -> "Snow showers"
+    95 -> "Thunderstorm"
+    96,99 -> "Thunderstorm with hail"
+    else -> "Unknown"
+}
+
+// ===== СТАРАЯ АНИМАЦИОННАЯ ВЕРСИЯ (fallback) ===== //
+@Composable
+private fun WeatherArtAnimated(code: Int, isNight: Boolean = false, modifier: Modifier = Modifier) {
     val transition = rememberInfiniteTransition(label = "weather")
     val sunAngle by transition.animateFloat(
         initialValue = 0f,
@@ -85,14 +148,12 @@ fun WeatherArt(code: Int, isNight: Boolean = false, modifier: Modifier = Modifie
     }
 }
 
+// ===== Ниже оригинальные функции рисования (оставлены без изменений) ===== //
 private fun DrawScope.drawMoonAnimated(cloudy: Boolean, cloudShift: Float) {
     val center = Offset(size.width/2, size.height/2)
     val r = size.minDimension * 0.22f
-    // moon body
     drawCircle(color = Color(0xFFDEE2E6), radius = r, center = center)
-    // shadow crescent for crescent effect
     drawCircle(color = Color(0xFFB0BAC5), radius = r * 0.85f, center = Offset(center.x + r*0.25f, center.y - r*0.1f))
-    // craters
     drawCircle(Color(0xFFB0BAC5), radius = r*0.12f, center = Offset(center.x - r*0.2f, center.y - r*0.1f))
     drawCircle(Color(0xFFB0BAC5), radius = r*0.08f, center = Offset(center.x + r*0.15f, center.y + r*0.05f))
     drawCircle(Color(0xFFB0BAC5), radius = r*0.06f, center = Offset(center.x - r*0.05f, center.y + r*0.18f))
